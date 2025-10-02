@@ -1,0 +1,68 @@
+{
+  "pdf_file": "autoCV.pdf",
+  "analysis_summary": {
+    "is_ats_friendly": false,
+    "ats_score": 50.0,
+    "status": "FAIL"
+  },
+  "checks": {
+    "single_column": {
+      "passed": false,
+      "description": "Single column layout preferred for ATS parsing"
+    },
+    "simple_fonts": {
+      "passed": false,
+      "description": "Standard ATS-friendly fonts used"
+    },
+    "no_images": {
+      "passed": true,
+      "description": "No images that may interfere with text extraction"
+    },
+    "clear_headers": {
+      "passed": true,
+      "description": "Clear section headers for easy parsing"
+    },
+    "left_aligned": {
+      "passed": false,
+      "description": "Text predominantly left-aligned"
+    },
+    "no_tables": {
+      "passed": true,
+      "description": "No complex table structures"
+    }
+  },
+  "detailed_metrics": {
+    "column_detection": {
+      "detected_clusters": 2,
+      "column_gaps_found": 0
+    },
+    "font_analysis": {
+      "font_compatibility_percentage": 0.0,
+      "total_font_instances": 77,
+      "ats_friendly_font_instances": 0
+    },
+    "alignment_analysis": {
+      "left_alignment_percentage": 51.95,
+      "left_aligned_elements": 40,
+      "total_text_elements": 77
+    },
+    "content_detection": {
+      "section_headers_found": 6,
+      "section_headers": [
+        "Summary",
+        "Work Experience",
+        "Projects",
+        "Education",
+        "Publications",
+        "Skills"
+      ],
+      "images_detected": false,
+      "tables_detected": false
+    }
+  },
+  "recommendations": [
+    "Convert to single-column layout",
+    "Use standard fonts (Arial, Calibri, Times New Roman)",
+    "Align text to the left"
+  ]
+}
