@@ -7,7 +7,7 @@ from collections import defaultdict
 # python -m spacy download en_core_web_sm
 nlp = spacy.load("en_core_web_sm")
 
-def extract_keywords_simple(job_description: str) -> dict:
+async def extract_keywords_simple(job_description: str) -> dict:
     """
     Extracts keywords dynamically from a job description using a simple linguistic approach.
 

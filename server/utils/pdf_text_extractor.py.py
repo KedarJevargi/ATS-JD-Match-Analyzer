@@ -15,4 +15,5 @@ def extract_text_from_pdf(path: str) -> str:
         return full_text
     except Exception as e:
         return f"Error processing file {path}: {e}"
-        
+    
+print(extract_text_from_pdf("Kedar_Jevargi_Resume.pdf")  )      
