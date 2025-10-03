@@ -3,10 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
 import json
-import asyncio
 import re
 from scipy.signal import find_peaks
 import traceback
+from io import BytesIO
 
 def extract_skills_from_json(data):
     """
@@ -32,7 +32,19 @@ async def analyze_resume(pdf_path, jd_json_data=None, visualize=True):
     """
     try:
         # --- Part 1: PDF Parsing ---
-        doc = fitz.open(pdf_path)
+        # Handle both file path and BytesIO - CORRECTED
+        if isinstance(pdf_path, str):
+            doc = fitz.open(pdf_path)
+        elif isinstance(pdf_path, BytesIO):
+            # Use stream parameter with getvalue() for BytesIO
+            doc = fitz.open(stream=pdf_path.getvalue(), filetype="pdf")
+        else:
+            # Handle other file-like objects
+            if hasattr(pdf_path, 'read'):
+                content = pdf_path.read()
+                doc = fitz.open(stream=content, filetype="pdf")
+            else:
+                raise ValueError(f"Unsupported input type: {type(pdf_path)}")
         
         line_data, all_fonts, text_alignment_data = [], [], []
         has_images, page_width, full_resume_text = False, 0, ""
@@ -62,7 +74,6 @@ async def analyze_resume(pdf_path, jd_json_data=None, visualize=True):
             return {"error": "Not enough readable text found to analyze."}
 
         # --- Part 2: Structural Analysis ---
-        # **Keeping the robust column detection logic**
         x_positions = np.array([x for x, _ in line_data])
         total_lines = len(x_positions)
         
@@ -103,11 +114,8 @@ async def analyze_resume(pdf_path, jd_json_data=None, visualize=True):
         if jd_json_data:
             required_skills = extract_skills_from_json(jd_json_data)
             if required_skills:
-                # Normalize resume text once for efficiency
                 resume_text_norm = " " + full_resume_text.lower().replace('\n', ' ') + " "
                 for skill in sorted(list(required_skills)):
-                    # **FIX: Advanced regex for accurate whole-word matching**
-                    # This handles C++, React.js, etc., and avoids partial matches like "java" in "javascript"
                     pattern = r'(?<!\w)' + re.escape(skill.lower()) + r'(?!\w)'
                     if re.search(pattern, resume_text_norm):
                         found_skills.append(skill)
@@ -117,13 +125,12 @@ async def analyze_resume(pdf_path, jd_json_data=None, visualize=True):
         
         overall_score = (keyword_match_score * 0.6) + (structural_score * 0.4) if jd_json_data else structural_score
         
-        # --- Part 4: Visualization (Full code restored) ---
+        # --- Part 4: Visualization ---
         if visualize:
             fig = plt.figure(figsize=(15, 12))
             gs = fig.add_gridspec(3, 2, hspace=0.5, wspace=0.3)
             fig.suptitle('ATS Resume Analysis Report', fontsize=20, fontweight='bold')
 
-            # Plot 1: Layout Analysis
             ax1 = fig.add_subplot(gs[0, :])
             if x_positions.size > 0:
                 hist, bin_edges = np.histogram(x_positions, bins=50, range=(0, page_width))
@@ -136,7 +143,6 @@ async def analyze_resume(pdf_path, jd_json_data=None, visualize=True):
                 ax1.set_title('Layout Analysis: N/A', fontweight='bold')
             ax1.grid(alpha=0.3)
             
-            # Plot 2: Keyword Match Pie Chart
             ax2 = fig.add_subplot(gs[1, 0])
             if jd_json_data and required_skills:
                 labels = 'Keywords Matched', 'Keywords Missing'
@@ -149,7 +155,6 @@ async def analyze_resume(pdf_path, jd_json_data=None, visualize=True):
                 ax2.set_title('Keyword Match Analysis', fontweight='bold')
             ax2.axis('equal')
 
-            # Plot 3: Structural Compliance Bars
             ax3 = fig.add_subplot(gs[1, 1])
             check_names = ['Single Column', 'Simple Fonts', 'No Images', 'Clear Headers', 'Left Aligned', 'No Tables']
             check_values = [c * 100 for c in structural_checks]
@@ -163,7 +168,6 @@ async def analyze_resume(pdf_path, jd_json_data=None, visualize=True):
                 label = '✓ PASS' if width > 50 else '✗ FAIL'
                 ax3.text(width / 2, bar.get_y() + bar.get_height()/2, label, ha='center', va='center', color='white', fontweight='bold')
 
-            # Plot 4: Final Scores Display
             ax4 = fig.add_subplot(gs[2, :])
             ax4.axis('off')
             scores = {'Structural Score': structural_score, 'Keyword Score': keyword_match_score, 'Overall Match Score': overall_score}
@@ -199,103 +203,3 @@ async def analyze_resume(pdf_path, jd_json_data=None, visualize=True):
         print(f"An unexpected error occurred: {e}")
         traceback.print_exc()
         return {"error": str(e)}
-
-# --- Example Usage ---
-if __name__ == "__main__":
-    # Example JD with skills that have special characters
-    jd_json_string = """
-{
-  "job_title": "Backend Developer",
-  "experience_years": {
-    "min": 2,
-    "max": null
-  },
-  "programming_languages": [
-    "Python",
-    "Golang"
-  ],
-  "frontend_frameworks": [],
-  "backend_frameworks": [
-    "Django",
-    "Flask",
-    "FastAPI"
-  ],
-  "databases": {
-    "relational": [
-      "SQL"
-    ],
-    "nosql": [],
-    "in_memory": [],
-    "search_engines": [],
-    "graph": [],
-    "time_series": []
-  },
-  "cloud_platforms": {
-    "providers": [
-      "AWS",
-      "Azure",
-      "GCP"
-    ],
-    "aws_services": [],
-    "azure_services": [],
-    "gcp_services": []
-  },
-  "devops_and_infrastructure": {
-    "containerization": [
-      "Docker"
-    ],
-    "orchestration": [
-      "Kubernetes"
-    ],
-    "ci_cd": [
-      "CI/CD Pipelines",
-      "GitHub Actions"
-    ],
-    "iac": [],
-    "monitoring": [],
-    "version_control": [
-      "GitHub"
-    ]
-  },
-  "messaging_and_streaming": [],
-  "testing_frameworks": {
-    "unit_testing": [],
-    "integration_testing": [],
-    "e2e_testing": [],
-    "performance_testing": []
-  },
-  "build_and_package_managers": [],
-  "apis_and_protocols": [
-    "RESTful APIs"
-  ],
-  "markup_and_styling": [],
-  "architectural_patterns": [
-    "Microservices Architecture"
-  ],
-  "methodologies": [],
-  "security": [],
-  "operating_systems": [],
-  "data_processing": [],
-  "machine_learning": [],
-  "mobile_development": [],
-  "soft_skills": [
-    "Collaboration",
-    "Communication"
-  ],
-  "certifications": [],
-  "other_technical_skills": [
-    "Caching Strategies"
-  ]
-}
-    """
-    jd_data = json.loads(jd_json_string)
-
-    pdf_file_path = "a.pdf" # A good test file
-    try:
-        report = asyncio.run(analyze_resume(pdf_file_path, jd_json_data=jd_data, visualize=True))
-        if report and "error" not in report:
-            print("\n--- JSON OUTPUT ---")
-            print(json.dumps(report, indent=2))
-            print("-------------------\n")
-    except FileNotFoundError:
-        print(f"\nERROR: The file '{pdf_file_path}' was not found.")
