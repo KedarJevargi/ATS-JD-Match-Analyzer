@@ -1,0 +1,72 @@
+.error-container {
+  margin: 1.5rem 0;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+}
+
+.error-icon {
+  width: 24px;
+  height: 24px;
+  color: #dc2626;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.error-text {
+  flex: 1;
+}
+
+.error-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #991b1b;
+  margin: 0 0 0.25rem 0;
+}
+
+.error-message {
+  font-size: 0.9rem;
+  color: #dc2626;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.error-dismiss {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background-color: transparent;
+  color: #dc2626;
+  border-radius: 4px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: background-color 0.2s ease;
+}
+
+.error-dismiss:hover {
+  background-color: #fee2e2;
+}
