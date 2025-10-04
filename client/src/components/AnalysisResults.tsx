@@ -36,23 +36,28 @@ export const AnalysisResults = ({ results }: AnalysisResultsProps) => {
   const renderSectionUpdates = (sectionUpdates: SectionUpdates | undefined) => {
     if (!sectionUpdates) return null;
 
-    const sections = Object.entries(sectionUpdates).filter(([_, value]) => value && value.length > 0);
+    const sections = Object.entries(sectionUpdates).filter(([_, value]) => value);
     
     if (sections.length === 0) return null;
 
     return (
       <div className="suggestion-subsection">
         <h4 className="subsection-title">Section Updates</h4>
-        {sections.map(([sectionName, items]) => (
-          <div key={sectionName} className="section-update">
-            <h5 className="section-name">{sectionName}</h5>
-            <ul className="suggestion-list">
-              {items?.map((item, index) => (
-                <li key={index}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {sections.map(([sectionName, items]) => {
+          // Handle both string and array formats
+          const itemsArray = Array.isArray(items) ? items : [items];
+          
+          return (
+            <div key={sectionName} className="section-update">
+              <h5 className="section-name">{sectionName}</h5>
+              <ul className="suggestion-list">
+                {itemsArray.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     );
   };

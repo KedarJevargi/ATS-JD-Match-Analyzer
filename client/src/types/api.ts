@@ -8,11 +8,13 @@ export interface AnalysisScore {
 
 // Complex response structure for suggestions
 export interface SectionUpdates {
-  Summary?: string[];
-  Skills?: string[];
-  Experience?: string[];
-  Projects?: string[];
-  Education?: string[];
+  Summary?: string[] | string;
+  Skills?: string[] | string;
+  Experience?: string[] | string;
+  Projects?: string[] | string;
+  Education?: string[] | string;
+  // Allow any additional section names with flexible types
+  [key: string]: string[] | string | undefined;
 }
 
 export interface ComplexSuggestions {

@@ -98,6 +98,8 @@ Based on the resume text + JSON analysis, provide specific suggestions in the fo
   "final_recommendations": ["array of final recommendations"]
 }
 
+Note: All values should be arrays of strings for consistency. For concise feedback, use a single-item array.
+
 # Resume Text:
 {resume_text}
 
