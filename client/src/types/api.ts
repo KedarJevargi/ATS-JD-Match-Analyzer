@@ -6,6 +6,22 @@ export interface AnalysisScore {
   'keyword score': number;
 }
 
+// Complex response structure for suggestions
+export interface SectionUpdates {
+  Summary?: string[];
+  Skills?: string[];
+  Experience?: string[];
+  Projects?: string[];
+  Education?: string[];
+}
+
+export interface ComplexSuggestions {
+  structural_fixes?: string[];
+  content_fixes?: string[];
+  section_updates?: SectionUpdates;
+  final_recommendations?: string[];
+}
+
 export interface AnalysisResult {
   column: boolean;
   'simple fonts': boolean;
@@ -16,7 +32,7 @@ export interface AnalysisResult {
   'key words matched': string[];
   'keyword missing': string[];
   score: AnalysisScore;
-  suggestions?: string;
+  suggestions?: string | ComplexSuggestions;
 }
 
 export interface ParsedJD {

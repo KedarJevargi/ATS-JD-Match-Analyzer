@@ -1,4 +1,4 @@
-import { AnalysisResult } from '../types/api';
+import { AnalysisResult, ComplexSuggestions, SectionUpdates } from '../types/api';
 import './AnalysisResults.css';
 
 interface AnalysisResultsProps {
@@ -10,6 +10,62 @@ export const AnalysisResults = ({ results }: AnalysisResultsProps) => {
     if (score >= 75) return 'score-high';
     if (score >= 50) return 'score-medium';
     return 'score-low';
+  };
+
+  const isComplexSuggestions = (
+    suggestions: string | ComplexSuggestions | undefined
+  ): suggestions is ComplexSuggestions => {
+    return typeof suggestions === 'object' && suggestions !== null;
+  };
+
+  const renderStringList = (items: string[] | undefined, title: string) => {
+    if (!items || items.length === 0) return null;
+    
+    return (
+      <div className="suggestion-subsection">
+        <h4 className="subsection-title">{title}</h4>
+        <ul className="suggestion-list">
+          {items.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const renderSectionUpdates = (sectionUpdates: SectionUpdates | undefined) => {
+    if (!sectionUpdates) return null;
+
+    const sections = Object.entries(sectionUpdates).filter(([_, value]) => value && value.length > 0);
+    
+    if (sections.length === 0) return null;
+
+    return (
+      <div className="suggestion-subsection">
+        <h4 className="subsection-title">Section Updates</h4>
+        {sections.map(([sectionName, items]) => (
+          <div key={sectionName} className="section-update">
+            <h5 className="section-name">{sectionName}</h5>
+            <ul className="suggestion-list">
+              {items?.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderComplexSuggestions = (suggestions: ComplexSuggestions) => {
+    return (
+      <div className="complex-suggestions">
+        {renderStringList(suggestions.structural_fixes, 'Structural Fixes')}
+        {renderStringList(suggestions.content_fixes, 'Content Fixes')}
+        {renderSectionUpdates(suggestions.section_updates)}
+        {renderStringList(suggestions.final_recommendations, 'Final Recommendations')}
+      </div>
+    );
   };
 
   const structuralChecks = [
@@ -95,7 +151,11 @@ export const AnalysisResults = ({ results }: AnalysisResultsProps) => {
         <div className="results-section">
           <h3 className="section-title">Suggestions</h3>
           <div className="suggestions-box">
-            <p className="suggestions-text">{results.suggestions}</p>
+            {isComplexSuggestions(results.suggestions) ? (
+              renderComplexSuggestions(results.suggestions)
+            ) : (
+              <p className="suggestions-text">{results.suggestions}</p>
+            )}
           </div>
         </div>
       )}
