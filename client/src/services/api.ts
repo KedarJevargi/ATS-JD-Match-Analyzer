@@ -24,7 +24,18 @@ class ApiService {
       body: formData,
     });
 
-    return this.handleResponse<AnalysisResult>(response);
+    const data = await this.handleResponse<{ result: AnalysisResult; response: string }>(response);
+    
+    // Backend returns {result: AnalysisResult, response: string}
+    // We need to extract result and add suggestions from response
+    if (!data.result) {
+      throw new Error('Invalid response format from server');
+    }
+    
+    return {
+      ...data.result,
+      suggestions: data.response || ''
+    };
   }
 
   /**
