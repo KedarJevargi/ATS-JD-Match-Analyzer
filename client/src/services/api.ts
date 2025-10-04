@@ -24,17 +24,25 @@ class ApiService {
       body: formData,
     });
 
-    const data = await this.handleResponse<{ result: AnalysisResult; response: string }>(response);
+    const data = await this.handleResponse<{ result: AnalysisResult; response: string | object }>(response);
     
-    // Backend returns {result: AnalysisResult, response: string}
+    // Backend returns {result: AnalysisResult, response: string | object}
     // We need to extract result and add suggestions from response
     if (!data.result) {
       throw new Error('Invalid response format from server');
     }
     
+    // Handle both string and complex object responses
+    let suggestions: string | object = data.response || '';
+    
+    // If response is an object, keep it as-is; if it's a string, use it as-is
+    if (typeof data.response === 'object' && data.response !== null) {
+      suggestions = data.response;
+    }
+    
     return {
       ...data.result,
-      suggestions: data.response || ''
+      suggestions
     };
   }
 
