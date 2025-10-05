@@ -11,9 +11,11 @@ app = FastAPI(
     description="A simple FastAPI service with PDF text extraction",
     version="1.0.0"
 )
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development. In production, specify your frontend URL
+    allow_origins=["https://ats-jd-match-analyzer-client.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
