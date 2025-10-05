@@ -77,4 +77,9 @@ class ApiService {
   }
 }
 
-export const apiService = new ApiService();
+// Create and export the service instance
+const apiService = new ApiService();
+
+// Export as both named and default export for flexibility
+export { apiService };
+export default apiService;

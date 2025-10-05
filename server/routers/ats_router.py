@@ -48,63 +48,83 @@ async def analyse_resume(pdf: UploadFile = File(...), jd: str = Form(...)):
         raise HTTPException(status_code=400, detail=f"Error during initial processing: {str(e)}")
 
 
-    # === STEP 2: Create Prompt for Gemini to Return Structured JSON Output ===
+    # === STEP 2: Use the Original Prompt for Formatted String Output ===
     final_prompt_template = """
-You are a software dev resume analyzer. You are given:
-1. The text content of a resume
-2. A JSON analysis of its structure and keyword coverage
+You are an expert software developer resume analyst with 10+ years of experience in technical recruiting and ATS optimization. 
 
-The JSON analysis has the following keys and rules:
-- "column": true/false → true means single column (good), false means multiple columns (bad).
-- "simple fonts": true/false → true means allowed fonts (Arial, Calibri, Times, Helvetica, Georgia, Garamond, Cambria, Verdana, Tahoma, Computer Modern, CMR, LM Roman). false means non-standard fonts used.
-- "no images": true/false → true means no images (good), false means images are present (bad).
-- "clear section header": true/false → true means section headers are clear, false means missing/unclear.
-- "poor text alignment": true/false → true means poor alignment, false means alignment is fine.
-- "no tables": true/false → true means no tables (good), false means tables are used (bad).
-- "key words matched": [...] → list of relevant keywords already found in resume.
-- "keyword missing": [...] → list of important keywords not found in resume.
+Given the following resume analysis data:
+{json_analysis}
 
-Your Task:
-Based on the resume text + JSON analysis, provide specific suggestions in the following areas:
-
-1. Structural Improvements
-   - Identify formatting issues (columns, fonts, images, tables, alignment)
-   - Suggest specific fixes (e.g., "Remove images from header", "Convert multi-column layout to single column")
-
-2. Content Improvements
-   - Review "key words matched" and "keyword missing"
-   - Recommend where to add the missing keywords (e.g., "Add Python, Django, and RESTful APIs under 'Technical Skills'")
-
-3. Section-by-Section Updates
-   - For each standard resume section (Summary, Skills, Experience, Projects, Education), specify what to improve
-   - If keywords fit multiple sections, state the best placement
-
-4. Final Recommendations
-   - Summarize all changes clearly in bullet points
-   - Ensure advice is tailored for a Software Development / Backend Engineering resume
-
-**IMPORTANT: Return ONLY a valid JSON object with this exact structure (no additional text or markdown):**
-
-{
-  "structural_fixes": ["array of specific structural fixes"],
-  "content_fixes": ["array of content improvements and keyword additions"],
-  "section_updates": {
-    "Summary": ["array of improvements for Summary section"],
-    "Skills": ["array of improvements for Skills section"],
-    "Experience": ["array of improvements for Experience section"],
-    "Projects": ["array of improvements for Projects section"],
-    "Education": ["array of improvements for Education section"]
-  },
-  "final_recommendations": ["array of final recommendations"]
-}
-
-Note: All values should be arrays of strings for consistency. For concise feedback, use a single-item array.
-
-# Resume Text:
+And the resume text:
 {resume_text}
 
-# JSON Analysis:
-{json_analysis}
+Provide a comprehensive analysis in the following JSON structure:
+
+{{
+  "resumeAnalysis": {{
+    "overallAssessment": "A comprehensive 3-4 sentence summary of the resume's current state, highlighting major strengths and critical weaknesses",
+    "detailedBreakdown": {{
+      "atsCompatibilityScore": {{
+        "score": <number between 0-100>,
+        "analysis": "Detailed explanation of why this score was given and what it means for ATS parsing",
+        "recommendation": "Specific actionable steps to improve ATS compatibility"
+      }},
+      "keywordAnalysis": {{
+        "matchPercentage": <percentage of keywords matched>,
+        "missingKeywords": ["keyword1", "keyword2", "keyword3"],
+        "analysis": "Explanation of keyword gaps and their impact",
+        "recommendation": "Specific guidance on where and how to add missing keywords with examples"
+      }},
+      "impactAndQuantification": {{
+        "quantifiedResults": <number of metrics found in resume>,
+        "analysis": "Assessment of how well achievements are quantified",
+        "recommendation": "Guidance on adding metrics using STAR/XYZ method with examples"
+      }},
+      "formattingAndReadability": {{
+        "issues": ["issue1", "issue2", "issue3"],
+        "analysis": "Explanation of formatting problems and their impact",
+        "recommendation": "Step-by-step formatting improvements"
+      }},
+      "grammarAndSpelling": {{
+        "errorCount": <estimated number of errors>,
+        "analysis": "Assessment of language quality",
+        "recommendation": "Proofreading and correction guidance"
+      }},
+      "structureAndContent": {{
+        "skillsSection": "Analysis of the skills section organization and completeness",
+        "projectsSection": "Analysis of projects section and suggestions",
+        "recommendations": ["recommendation1", "recommendation2"]
+      }}
+    }},
+    "summaryOfKeyRecommendations": {{
+      "rectifyFormattingAndProofread": {{
+        "priority": "Critical|High|Medium",
+        "action": "Detailed action to take"
+      }},
+      "aggressivelyOptimizeKeywords": {{
+        "priority": "Critical|High|Medium",
+        "action": "Detailed action to take"
+      }},
+      "quantifyAllAchievements": {{
+        "priority": "Critical|High|Medium",
+        "action": "Detailed action to take"
+      }},
+      "restructureSkillsAndProjects": {{
+        "priority": "Critical|High|Medium",
+        "action": "Detailed action to take"
+      }}
+    }}
+  }}
+}}
+
+Important guidelines:
+1. Base ATS score on the structure score from the JSON analysis
+2. Use the "keyword missing" array to populate missingKeywords
+3. Calculate keyword match percentage from keywords matched vs total keywords
+4. Be specific and actionable in all recommendations
+5. Use proper priority levels (Critical for urgent issues, High for important, Medium for nice-to-have)
+6. Provide concrete examples in recommendations
+7. Return ONLY valid JSON, no additional text
 """
     
     full_prompt_with_context = final_prompt_template.format(
@@ -112,46 +132,28 @@ Note: All values should be arrays of strings for consistency. For concise feedba
         json_analysis=json.dumps(analysis_result_json, indent=2)
     )
 
-    # === STEP 3: Call Gemini and Parse the Response ===
+    # === STEP 3: Call Gemini and Return the Raw String Response ===
     try:
         api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
             raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable is not set.")
         
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-pro')
 
         gemini_response = await model.generate_content_async(
             full_prompt_with_context,
             generation_config=genai.types.GenerationConfig(
                 temperature=0.1,
+                response_mime_type="application/json"  # Force JSON output
             )
         )
         
-        # --- Parse the response text into a JSON object ---
-        response_text = gemini_response.text.strip()
-        
-        # Remove markdown code block formatting (e.g., ```json ... ```) if present
-        if response_text.startswith('```'):
-            start_idx = response_text.find('{')
-            end_idx = response_text.rfind('}')
-            if start_idx != -1 and end_idx != -1:
-                response_text = response_text[start_idx:end_idx + 1]
-        
-        # Try to parse as JSON, fall back to raw text if parsing fails
-        try:
-            parsed_response = json.loads(response_text)
-            # Return the parsed JSON object
-            return {
-                "result": analysis_result_json,
-                "response": parsed_response
-            }
-        except json.JSONDecodeError:
-            # If JSON parsing fails, return the raw text as fallback
-            return {
-                "result": analysis_result_json,
-                "response": response_text
-            }
+        # --- Return the raw text directly from the model ---
+        return {
+            "result": analysis_result_json,
+            "response": gemini_response.text 
+        }
 
     except Exception as e:
         if isinstance(e, HTTPException):

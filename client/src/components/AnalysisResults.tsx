@@ -36,28 +36,23 @@ export const AnalysisResults = ({ results }: AnalysisResultsProps) => {
   const renderSectionUpdates = (sectionUpdates: SectionUpdates | undefined) => {
     if (!sectionUpdates) return null;
 
-    const sections = Object.entries(sectionUpdates).filter(([_, value]) => value);
+    const sections = Object.entries(sectionUpdates).filter(([_, value]) => value && value.length > 0);
     
     if (sections.length === 0) return null;
 
     return (
       <div className="suggestion-subsection">
         <h4 className="subsection-title">Section Updates</h4>
-        {sections.map(([sectionName, items]) => {
-          // Handle both string and array formats
-          const itemsArray = Array.isArray(items) ? items : [items];
-          
-          return (
-            <div key={sectionName} className="section-update">
-              <h5 className="section-name">{sectionName}</h5>
-              <ul className="suggestion-list">
-                {itemsArray.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
+        {sections.map(([sectionName, items]) => (
+          <div key={sectionName} className="section-update">
+            <h5 className="section-name">{sectionName}</h5>
+            <ul className="suggestion-list">
+              {items?.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     );
   };
@@ -81,6 +76,10 @@ export const AnalysisResults = ({ results }: AnalysisResultsProps) => {
     { label: 'Good Text Alignment', value: !results['poor text alignment'], key: 'alignment' },
     { label: 'No Tables', value: results['no tables'], key: 'no-tables' },
   ];
+
+  // Add safety checks for arrays
+  const keywordsMatched = Array.isArray(results['key words matched']) ? results['key words matched'] : [];
+  const keywordsMissing = Array.isArray(results['keyword missing']) ? results['keyword missing'] : [];
 
   return (
     <div className="analysis-results">
@@ -118,14 +117,14 @@ export const AnalysisResults = ({ results }: AnalysisResultsProps) => {
       </div>
 
       {/* Keywords Matched */}
-      {results['key words matched'].length > 0 && (
+      {keywordsMatched.length > 0 && (
         <div className="results-section">
           <h3 className="section-title">
             Keywords Matched
-            <span className="keyword-count">{results['key words matched'].length}</span>
+            <span className="keyword-count">{keywordsMatched.length}</span>
           </h3>
           <div className="keyword-list">
-            {results['key words matched'].map((keyword, index) => (
+            {keywordsMatched.map((keyword, index) => (
               <span key={index} className="keyword-tag keyword-matched">
                 {keyword}
               </span>
@@ -135,14 +134,14 @@ export const AnalysisResults = ({ results }: AnalysisResultsProps) => {
       )}
 
       {/* Missing Keywords */}
-      {results['keyword missing'].length > 0 && (
+      {keywordsMissing.length > 0 && (
         <div className="results-section">
           <h3 className="section-title">
             Missing Keywords
-            <span className="keyword-count missing">{results['keyword missing'].length}</span>
+            <span className="keyword-count missing">{keywordsMissing.length}</span>
           </h3>
           <div className="keyword-list">
-            {results['keyword missing'].map((keyword, index) => (
+            {keywordsMissing.map((keyword, index) => (
               <span key={index} className="keyword-tag keyword-missing">
                 {keyword}
               </span>
